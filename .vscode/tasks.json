@@ -1,0 +1,53 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "make",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "panel": "dedicated",
+                "clear": true
+            }         
+        },
+        {
+            "label": "Build & run C++ project",
+            "dependsOn": [
+                "Build C++ project"
+            ],
+            "type": "shell",
+            "command": "sshpass",
+            "args": [
+                "-p",
+                "pi",
+                "rsync",
+                "-avzP",
+                "./bin/*",
+                "pi@raspberrypi.local:~/",
+                "&&",
+                "echo",
+                "&&",
+                "sshpass",
+                "-p",
+                "pi",
+                "ssh",
+                "pi@raspberrypi.local",
+                "sudo",
+                "'/home/pi/app'"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "clear": true
+            }  
+        }
+    ]
+}
