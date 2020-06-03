@@ -4,7 +4,8 @@
 #include <errno.h>
 #include <unistd.h>
 
-#include "comm.h"
+#include "config.h"
+#include "serial.h"
 
 #define true (1)
 #define false (0)
@@ -60,9 +61,9 @@ icp_command Commands[] =
 
 };
 
-char cmd_string[20], hex_string[40];
+char cmd_string[20], rsp_string[20], hex_string[40];
 
-int icp_talk(int addr, int icp_cmd, char* odata)
+int icp_talk(int addr, int icp_cmd, char* odata, char* idata)
 {
 
     char * c;
@@ -91,44 +92,29 @@ int icp_talk(int addr, int icp_cmd, char* odata)
     *c++ = '\x0D';
 
     write(fd_port, cmd_string, strlen(cmd_string));
-    tohex(cmd_string, strlen(cmd_string), hex_string, sizeof(hex_string));
-    syslog(LOG_INFO, "sent: %s", hex_string);
+    if (verbose >= 3) {
+        tohex(cmd_string, strlen(cmd_string), hex_string, sizeof(hex_string));
+        syslog(LOG_INFO, "sent: %s (%s)", hex_string, cmd_string);
+    }
 
-    // // ---
+    usleep(20000);
 
-    // poll_fd.fd = fd_port;
-    // poll_fd.events = POLLIN;
-    // poll_fd.revents = 0;
-    // n = poll(&poll_fd, 5, 500); // wait here
+    c = memset(rsp_string, 0, sizeof(rsp_string));
+    read(fd_port, rsp_string, sizeof(rsp_string));
+    if (verbose >= 3) {
+        tohex(rsp_string, strlen(rsp_string), hex_string, sizeof(hex_string));
+        syslog(LOG_INFO, "read: %s (%s)", hex_string, rsp_string);
+    }
     
-    // if (n < 0) {
-    //     syslog(LOG_ERR, "reader error %d %s", errno, strerror (errno) );
-    //     return 1;
-    // }
-    // if (n == 0) {
-    //     syslog(LOG_ERR, "nothing to read" );
-    //     return 2;
-    // }
-
-    // c = memset(cmd_string, 0, sizeof(cmd_string));
-
-    // if (poll_fd.revents & POLLIN) {
-    //     n = read(poll_fd.fd, c, 1 );
-    //     if (n <= 0) return 3;
-    //     if ( *c != Commands[ icp_cmd ].rpref) return 3;
-    //     c++;
-    //     if ( !Commands[icp_cmd].anonymous ) {
-    //         n = read(poll_fd.fd, c, 2 );
-    //         if (n<2) return 4;
-    //         // проверку алреса ответившего
-    //         c += n;
-    //     }
-    //     // if (strlen(c)>0) {
-    //     //     memcpy(data, c, strlen(c)-1);
-    //     // }
-    // }	// if poll
-
-
+    if ( *c++ != Commands[ icp_cmd ].rpref) return 3;   // проверка префикса ответа
+    if ( !Commands[icp_cmd].anonymous ) {               // проверка адреса ответившего
+        if (*c++ != cmd_string[1] || *c++ != cmd_string[2] )
+            return 4;
+    }
+    if (idata != NULL) {
+        memset( idata, 0, strlen(c)+1);
+        memcpy(idata, c, strlen(c));
+    }
 
     return 0;
 }

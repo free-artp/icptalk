@@ -13,7 +13,7 @@ CROSS_COMPILE=
 
 #SOURCES=main.c comm.c config.c scheduler.c gates.c
 #SOURCES=daemon.c comm.c config.c scheduler.c gates.c
-SOURCES=main.c config.c comm.c proto.c
+SOURCES=main.c config.c proto.c serial.c
 
 # CC=$(CROSS_COMPILE)-cc
 # NM=$(CROSS_COMPILE)-nm

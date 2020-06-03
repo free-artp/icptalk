@@ -4,7 +4,9 @@
 #include <getopt.h>
 
 
-#include "comm.h"
+#include "serial.h"
+
+int verbose = 0;
 
 // return	1 - fail
 //			0 - success
@@ -12,17 +14,12 @@ int config(int argc, char* argv[]) {
 	int opt;
 	int n;
 	char buf[8];
-	for(opt=getopt(argc, argv, "p:b:"); opt != -1; opt=getopt(argc, argv, "c:p:b:m:dh")) {
+	for(opt=getopt(argc, argv, "p:b:v:"); opt != -1; opt=getopt(argc, argv, "p:b:v:")) {
 		switch (opt) {
             case 'b' : { /* set baud rate */
-			  n = snprintf(buf, sizeof(buf), "%s", optarg);
-			  if (n < 0 || n > sizeof(buf)) {
-				syslog(LOG_ERR, "couldn't convert -b option into a baud rate");
-				return 1;
-			  }
-			  baud = set_baud(buf);
-			  if (baud == 0) {
-				syslog(LOG_ERR, "baud rate [%s] not supported", buf);
+			  baud = atoi(optarg);
+			  if (baud == 0 || get_baud(baud) < 0) {
+				syslog(LOG_ERR, "baud rate [%s] not supported", optarg);
 				return 1;
 			  }
 			}; break;
@@ -33,7 +30,9 @@ int config(int argc, char* argv[]) {
 				return 1;
 			  }
 			}; break;
-
+			case 'v' : {
+				verbose = atoi(optarg);
+			}; break;
         }
     }
 	return 0;

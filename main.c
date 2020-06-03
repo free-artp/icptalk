@@ -7,15 +7,18 @@
 #include <unistd.h>
 
 #include "config.h"
-#include "comm.h"
+#include "serial.h"
 #include "proto.h"
 
 int main(int argc, char* argv[]) {
 
-	pthread_t twriter, treader, tscheduler;
-	int result;
+//	pthread_t twriter, treader, tscheduler;
+//	int result;
+	char data[20];
+	double a;
+	int cnt;
 
-	openlog("talker", LOG_PID, LOG_USER);
+	openlog("icptalk", LOG_PID, LOG_USER);
 	syslog(LOG_INFO, "start");
 
 	if (config(argc, argv)) {
@@ -24,52 +27,20 @@ int main(int argc, char* argv[]) {
 	}
 
 	init_port();
+	set_blocking(fd_port,0);
 
-	//----------------------------------------------------------
-	
-	result = pthread_create(&treader, NULL, reader, NULL);
-	if ( result != 0 ) {
-		syslog(LOG_ERR, "could not create thread reader");
-		exit(0);
-	}
-	syslog(LOG_INFO, "reader created");
+	icp_talk(1, ICP_ReadModuleName, NULL, NULL );
+	icp_talk(1, ICP_ReadFirmwareVersion, NULL, NULL );
+	icp_talk(1, ICP_SetModuleConf, "01050680", NULL ); // <new addr><+/- 2.5V><9600 baud><50Hz, no CheckSumm, Engineer units>
 
-	result = pthread_create(&twriter, NULL, writer, NULL);
-	if ( result != 0 ) {
-		syslog(LOG_ERR, "could not create thread writer");
-		exit(0);
-	}
-	syslog(LOG_INFO, "writer created");
-
-	result = pthread_join(treader, NULL);
-	if (result != 0) {
-		perror("Joining the reader thread");
-		return EXIT_FAILURE;
-	}
-	result = pthread_join(twriter, NULL);
-	if (result != 0) {
-		perror("Joining the writer thread");
-		return EXIT_FAILURE;
+	while(1) {
+		if (!icp_talk(1, ICP_ReadAnalogInput, NULL, data ) )
+			a = atof(data);
+		if (!icp_talk(1, ICP_ReadEventCounter, NULL, data ))
+			cnt = atoi(data);
+		printf(": %f %d\n", a, cnt);
 	}
 
-
-
-	// result = pthread_create(&tscheduler, NULL, scheduler_executor, NULL);
-	// if ( result != 0 ) {
-	// 	syslog(LOG_ERR, "could not create thread sheduler_executor");
-	// 	exit(0);
-	// }
-	// syslog(LOG_INFO, "scheduler_executor created");
-	//----------------------------------------------------------
-
-
-	// result = pthread_join(tscheduler, NULL);
-	// if (result != 0) {
-	// 	perror("Joining the 3 thread");
-	// 	return EXIT_FAILURE;
-	// }
-
-//	writer((void*)0);
 
 	printf("Done\n");
 	exit(0);

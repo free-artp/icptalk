@@ -13,6 +13,7 @@ typedef enum _icp_commands_type_ {
     ICP_ClearEventCounter
 } ICP_COMMANDS_ENUM;
 
-int icp_talk(int addr, ICP_COMMANDS_ENUM icp_cmd, char* data);
+//int icp_talk(int addr, ICP_COMMANDS_ENUM icp_cmd, char* data);
+int icp_talk(int addr, ICP_COMMANDS_ENUM icp_cmd, char* odata, char* idata);
 
 #endif
